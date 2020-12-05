@@ -10,11 +10,6 @@ header-includes:
 - \usepackage{xcolor}
 date: "<center> December 1, 2020 </center>"
 output:
-  pdf_document:
-    toc: no
-    toc_depth: '3'
-    highlight: tango
-    number_sections: yes
   html_document:
     
     highlight: tango
@@ -25,6 +20,11 @@ output:
     pandoc_args:
     - --number-sections
     - --number-offset=2
+  pdf_document:
+    toc: no
+    toc_depth: '3'
+    highlight: tango
+    number_sections: yes
 ---
 
 
@@ -41,7 +41,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ## Your name:  Gabriel Vazquez <!-- write your name --> {-}
 
-## Partner's name:   <!-- write your name --> {-}
+## Partner's name:  Neema Nejad <!-- write your name --> {-}
 
 ## Any other collaborator(s):   <!-- write your name --> {-}
 
@@ -102,7 +102,7 @@ Plot the histogram of the inter-packet delays of the overt packet stream. Plot t
 ```{r }
 packetTimes = unlist(packetTimes, use.names = FALSE);
 
-overt_interpacket_delays = packetTimes[2:length(packetTimes)] - packetTimes[1:(length(packetTimes)-1)];
+overt_interpacket_delays = packetTimes[2:length(packetTimes)] - packetTimes[1:(length(packetTimes)-1)]
 covert_interpacket_delays = modifiedPacketStream[2:length(modifiedPacketStream)] - modifiedPacketStream[1:(length(modifiedPacketStream)-1)]
 hist(overt_interpacket_delays, main="Overt Packet Stream Inter-Packet Delay Histogram");
 hist(covert_interpacket_delays, main="Covert Packet Stream Inter-Packet Delay Histogram")
@@ -118,7 +118,28 @@ Alice and Bob decide to use the following modulation scheme. Let $m$, $min$, and
 ## Answer {-}
 
 ```{r }
-#  your R code here
+#  calculate median, min, and max of overt inner packet delays
+m = mean(packetTimes[2:length(packetTimes)] - packetTimes[1:(length(packetTimes)-1)])
+minimum = min(packetTimes[2:length(packetTimes)] - packetTimes[1:(length(packetTimes)-1)])
+maximum = max(packetTimes[2:length(packetTimes)] - packetTimes[1:(length(packetTimes)-1)])
+
+print("Median: ")
+print(m)
+print("Minimum: ")
+print(minimum)
+print("Maximum: ")
+print(maximum)
+
+modifiedPacketStream2 = numeric(8*nchar(secretMsg)+1);
+time = 0;
+modifiedPacketStream2[1] = time;
+
+for (i in 1:(length(binaryNumbers))) {
+  time = time + if(binaryNumbers[i] == 0) runif(1, minimum, m) else runif(1, m, maximum);
+  modifiedPacketStream2[i+1] = time;
+}
+
+print(modifiedPacketStream2);
 
 ```
 
@@ -131,11 +152,16 @@ Plot the histogram  of the inter-packet  delays of the overt packet stream and t
 ## Answer {-}
 
 ```{r }
-#  your R code here
+packetTimes = unlist(packetTimes, use.names = FALSE);
+
+overt_interpacket_delays = packetTimes[2:length(packetTimes)] - packetTimes[1:(length(packetTimes)-1)]
+covert_interpacket_delays = modifiedPacketStream2[2:length(modifiedPacketStream2)] - modifiedPacketStream2[1:(length(modifiedPacketStream2)-1)]
+hist(overt_interpacket_delays, main="Overt Packet Stream Inter-Packet Delay Histogram");
+hist(covert_interpacket_delays, main="Covert Packet Stream Inter-Packet Delay Histogram")
 
 ```
 
-<!-- text comments here -->
+Eve will definitely be less suspicious because the frequency of the new covert inter packet delays are somewhat evenly distributed between various inter packet delay values while the previous histogram showed inter packet delays of only 0.25 and 0.75. Similar to the histogram of the overt inter packet delays, most of the covert inter packet delays are between 0 - 0.1. Since the histogram of the covert inter packet delays is much similar to the histogram of the overt inter packet delays, Eve will not be suspicious.
 
 ##  
 
@@ -143,21 +169,15 @@ Answer the following questions briefly (in 1 or 2 sentences)
 
 1. How can you improve upon the method in Question 3? 
 
-   \textbf{Answer: } <!-- enter your answer here --> 
+   \textbf{Answer: } Instead of generating equally random delays between the min, median, and max, Alice could have generated random delays based on an exponential distribution that followed the overt inter packet distribution. From there, she could adjust/scale the min, median, and max values to determine how to send a 1 and 0 so the histogram of the covert inter packet delays almost replicates the histogram of the overt inter packet delays.
 
 2. We assumed the Alice will buffer up the packets and we mentioned that it was unrealistic. Why?
  
-   \textbf{Answer: } <!-- enter your answer here -->
+   \textbf{Answer: } As mentioned before, it's unrealistic for Alice to buffer up her own packets in a Skype call because the quality of the Skype call in terms of both audio and video would be severely compromised. A constant stream of packets must be sent without them being buffered to maintain good performance during the Skype call. Even then, Skype may be programmed to disconnect the call if no packets are being sent over a certain amount of time. Lastly, Alice may not have total control of the time between her inter packet delays.
 
 3. We have assumed that the network does not alter the inter-packet delays. What would be the problem if it did? Can you suggest methods to mitigate the effect of the changes of the inter-packet delay (noise)?
 
-   \textbf{Answer: } <!-- enter your answer here -->
-
-
-## Answer {-}
-
-<!-- enter your answer below -->
-
+   \textbf{Answer: } If the network altered the inter-packet delays, then the hidden message could be obstructed by sending false 1's or 0's. This could be mitigated by checking how the network affects the covert inter packet delays then adjusting the values used to determine sending 1's and 0's so the noise is accounted for when calculating covert inter packet delays.
 
 # Implementation
 
@@ -353,11 +373,18 @@ print("Sum:");
 print(overflows/trials + underflows/trials + success/trials);
 ```
 
-##  
-Propose methods to deal with buffer overflow and underflow.
-
+##
+Using the Gambler’s Ruin problem determine bounds on overflow and underflow probabilities.
 
 ## Answer {-}
 
-<!-- enter your answer below -->
+
+
+##  
+Propose methods to deal with buffer overflow and underflow.
+
+## Answer {-}
+
+
+
 
