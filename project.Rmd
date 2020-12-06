@@ -373,18 +373,15 @@ print("Sum:");
 print(overflows/trials + underflows/trials + success/trials);
 ```
 
-##
-Using the Gambler’s Ruin problem determine bounds on overflow and underflow probabilities.
-
-## Answer {-}
-
-
-
 ##  
 Propose methods to deal with buffer overflow and underflow.
 
 ## Answer {-}
+Choose the Uniform or Exponential distribution based on how high the success rate is.
 
+Scale up the time remaining until underflow happens so a greater time window can catch more packets.
 
+Scale down the generated delays between packets so less packets are added to the buffer between a given time and a delay.
 
+Have a bigger buffer size.
 
