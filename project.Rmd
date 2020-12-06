@@ -236,8 +236,9 @@ expSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
     }
     
     # check for underflow (underflow only occurs if buffer is empty)
-    if (currentBufferSize == 0) {
-      timeRemainingTillUnderflow = if(bit == 1) 1-delay else 1-delay;
+    if (currentBufferSize == 0 && bit == 0) {
+      # if no packets arrive, the message will get corrupted.
+      timeRemainingTillUnderflow = if(bit == 0) median-delay;
       
       arrivingPackets = length(overt_packet_times[(overt_packet_times > time) & (overt_packet_times <= (time+timeRemainingTillUnderflow))]);
       
@@ -327,7 +328,7 @@ unifSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
     
     # check for underflow (underflow only occurs if buffer is empty)
     if (currentBufferSize == 0) {
-      timeRemainingTillUnderflow = if(bit == 1) 1-delay else 1-delay;
+      timeRemainingTillUnderflow = if(bit == 1) 1-delay else median-delay;
       
       arrivingPackets = length(overt_packet_times[(overt_packet_times > time) & (overt_packet_times <= (time+timeRemainingTillUnderflow))]);
       
@@ -350,7 +351,7 @@ success = 0;
 trials = 500;
 
 for (i in 1:trials) {
-  value = unifSimulation(20,0,32);
+  value = unifSimulation(20,18,32);
   if (value == 0) {
     success = success + 1;
   }
@@ -368,9 +369,6 @@ print("Underflow %: ");
 print(underflows / trials);
 print("Success %: ");
 print(success / trials);
-
-print("Sum:");
-print(overflows/trials + underflows/trials + success/trials);
 ```
 
 ##
