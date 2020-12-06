@@ -407,12 +407,13 @@ print("Uniform Distribution")
 print(ans)
 ```
 
-
 ##  
 Propose methods to deal with buffer overflow and underflow.
 
 ## Answer {-}
+Keeping the size of the message smaller generally keeps the percentage of overflow or underflow lower than messages with more bits. In both the Uniform and Exponential generation of inter-packet delays, the percentage of underflows and overflows are lower with each $i$. Additionally, $i = 10$ had the smallest chance of overflow and underflow for both Uniform and Exponential methods of generating inter-packet delays and for both message sizes. So keeping the message size smaller and the initial buffer size half the max buffer size ($i = 10 = 20 * 0.5$), then the percentage of underflows and overflows will drastically decrease.
 
+A method to decrease underflows is to scale up the time remaining until underflow happens so a greater time window can catch more incoming packets. To decrease the chance of overflows, the generated delays between packets could be scaled down so less packets are added to the buffer between a given time and a delay.
 
-
+Lastly, the buffer size itself could be scaled bigger or smaller in accordance with the delay scaling mentioned previously to prevent underflows and overflows.
 
