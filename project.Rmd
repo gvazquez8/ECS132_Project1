@@ -236,8 +236,9 @@ expSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
     }
     
     # check for underflow (underflow only occurs if buffer is empty)
-    if (currentBufferSize == 0) {
-      timeRemainingTillUnderflow = if(bit == 1) 1-delay else 1-delay;
+    if (currentBufferSize == 0 && bit == 0) {
+      # if no packets arrive, the message will get corrupted.
+      timeRemainingTillUnderflow = if(bit == 0) median-delay;
       
       arrivingPackets = length(overt_packet_times[(overt_packet_times > time) & (overt_packet_times <= (time+timeRemainingTillUnderflow))]);
       
@@ -253,34 +254,50 @@ expSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
 ```
 
 ```{r}
-# tabulate results and compute the probabilities
-overflows = 0;
-underflows = 0;
-success = 0;
-trials = 500;
+initBufferSizes = c(2,6,10,14,18);
+m = c(16,32);
 
-for (i in 1:trials) {
-  value = expSimulation(20,14,32);
-  if (value == 0) {
-    success = success + 1;
+underflows16 = numeric(5);
+underflows32 = numeric(5);
+overflows16 = numeric(5);
+overflows32 = numeric(5);
+
+for (i in 1:length(initBufferSizes)) {
+  overflows = 0;
+  underflows = 0;
+  for (j in 1:500) {
+    value = expSimulation(20,initBufferSizes[i],16);
+    if (value == 1) {
+      overflows = overflows + 1;
+    }
+    else if (value == -1) {
+      underflows = underflows + 1;
+    }
   }
-  else if (value == 1) {
-    overflows = overflows + 1;
-  }
-  else {
-    underflows = underflows + 1;
-  }
+  underflows16[i] = underflows / 500;
+  overflows16[i] = overflows / 500;
 }
 
-print("Overflow %: ");
-print(overflows / trials);
-print("Underflow %: ");
-print(underflows / trials);
-print("Success %: ");
-print(success / trials);
+for (i in 1:length(initBufferSizes)) {
+  overflows = 0;
+  underflows = 0;
+  for (j in 1:500) {
+    value = expSimulation(20,initBufferSizes[i],32);
+    if (value == 1) {
+      overflows = overflows + 1;
+    }
+    else if (value == -1) {
+      underflows = underflows + 1;
+    }
+  }
+  underflows32[i] = underflows / 500;
+  overflows32[i] = overflows / 500;
+}
 
-print("Sum:");
-print(overflows/trials + underflows/trials + success/trials);
+ans = matrix(c(underflows16,overflows16, underflows32,overflows32), nrow=4, ncol=5, byrow = T);
+dimnames(ans) = list(c("underflow % (m=16)", "overflow  % (m=16)", "underflow % (m=32)", "overflow  % (m=32)"),c("i=2", "i=6", "i=10", "i=14", "i=18"))
+print("Exponential Distribution")
+print(ans)
 ```
 
 ## 
@@ -327,7 +344,7 @@ unifSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
     
     # check for underflow (underflow only occurs if buffer is empty)
     if (currentBufferSize == 0) {
-      timeRemainingTillUnderflow = if(bit == 1) 1-delay else 1-delay;
+      timeRemainingTillUnderflow = if(bit == 1) 1-delay else median-delay;
       
       arrivingPackets = length(overt_packet_times[(overt_packet_times > time) & (overt_packet_times <= (time+timeRemainingTillUnderflow))]);
       
@@ -344,33 +361,50 @@ unifSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
 
 ```{r}
 # tabulate results and compute the probabilities
-overflows = 0;
-underflows = 0;
-success = 0;
-trials = 500;
+initBufferSizes = c(2,6,10,14,18);
+m = c(16,32);
 
-for (i in 1:trials) {
-  value = unifSimulation(20,0,32);
-  if (value == 0) {
-    success = success + 1;
+underflows16 = numeric(5);
+underflows32 = numeric(5);
+overflows16 = numeric(5);
+overflows32 = numeric(5);
+
+for (i in 1:length(initBufferSizes)) {
+  overflows = 0;
+  underflows = 0;
+  for (j in 1:500) {
+    value = unifSimulation(20,initBufferSizes[i],16);
+    if (value == 1) {
+      overflows = overflows + 1;
+    }
+    else if (value == -1) {
+      underflows = underflows + 1;
+    }
   }
-  else if (value == 1) {
-    overflows = overflows + 1;
-  }
-  else {
-    underflows = underflows + 1;
-  }
+  underflows16[i] = underflows / 500;
+  overflows16[i] = overflows / 500;
 }
 
-print("Overflow %: ");
-print(overflows / trials);
-print("Underflow %: ");
-print(underflows / trials);
-print("Success %: ");
-print(success / trials);
+for (i in 1:length(initBufferSizes)) {
+  overflows = 0;
+  underflows = 0;
+  for (j in 1:500) {
+    value = unifSimulation(20,initBufferSizes[i],32);
+    if (value == 1) {
+      overflows = overflows + 1;
+    }
+    else if (value == -1) {
+      underflows = underflows + 1;
+    }
+  }
+  underflows32[i] = underflows / 500;
+  overflows32[i] = overflows / 500;
+}
 
-print("Sum:");
-print(overflows/trials + underflows/trials + success/trials);
+ans = matrix(c(underflows16,overflows16, underflows32,overflows32), nrow=4, ncol=5, byrow = T);
+dimnames(ans) = list(c("underflow % (m=16)", "overflow  % (m=16)", "underflow % (m=32)", "overflow  % (m=32)"),c("i=2", "i=6", "i=10", "i=14", "i=18"))
+print("Uniform Distribution")
+print(ans)
 ```
 
 ##  
