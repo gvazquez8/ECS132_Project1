@@ -10,6 +10,11 @@ header-includes:
 - \usepackage{xcolor}
 date: "<center> December 1, 2020 </center>"
 output:
+  pdf_document:
+    toc: no
+    toc_depth: '3'
+    highlight: tango
+    number_sections: yes
   html_document:
     
     highlight: tango
@@ -20,11 +25,6 @@ output:
     pandoc_args:
     - --number-sections
     - --number-offset=2
-  pdf_document:
-    toc: no
-    toc_depth: '3'
-    highlight: tango
-    number_sections: yes
 ---
 
 
@@ -74,7 +74,8 @@ binaryNumbers = numeric(length=(8*nchar(secretMsg)));
 # convert character to binary numbers and store them in list.
 for (i in 1:nchar(secretMsg)) {
   c = substr(secretMsg, i, i);
-  binary = rev(rawToBits(charToRaw(c))); # rawToBits returns the binary number with LSB first so need to reverse it.
+  # rawToBits returns the binary number with LSB first so need to reverse it.
+  binary = rev(rawToBits(charToRaw(c))); 
   for (j in 1:length(binary)) { 
     binaryNumbers[8*(i-1)+j] = if(binary[j] == 0) 0 else 1;
   }
@@ -204,8 +205,6 @@ expSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
   }
   
   time = 0;
-  
-  time = 0;
   for (bit in bits) {
     # figure out the delay needed for the current packet.
     delay = -1;
@@ -224,8 +223,13 @@ expSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
     # send the packet
     currentBufferSize = currentBufferSize - 1;
     
+    # sent a packet we don't have so underflow occurred.
+    if (currentBufferSize < 0) {
+      return(-1);
+    }
+    
     # buffer in arriving packets.
-    currentBufferSize = currentBufferSize + length(overt_packet_times[(overt_packet_times > time) & (overt_packet_times <= (time+delay))]);
+    currentBufferSize = currentBufferSize + length(overt_packet_times[(overt_packet_times >= time) & (overt_packet_times < (time+delay))]);
     
     # update time
     time = time + delay;
@@ -233,19 +237,6 @@ expSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
     # check for overflow.
     if (currentBufferSize > maxBufferSize) {
       return(1);
-    }
-    
-    # check for underflow (underflow only occurs if buffer is empty)
-    if (currentBufferSize == 0 && bit == 0) {
-      # if no packets arrive, the message will get corrupted.
-      timeRemainingTillUnderflow = if(bit == 0) median-delay;
-      
-      arrivingPackets = length(overt_packet_times[(overt_packet_times > time) & (overt_packet_times <= (time+timeRemainingTillUnderflow))]);
-      
-      # no packets arrived during this time.
-      if (arrivingPackets == 0) {
-        return(-1);
-      }
     }
   }
   return(0);
@@ -331,8 +322,12 @@ unifSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
     # send the packet
     currentBufferSize = currentBufferSize - 1;
     
+    # check for underflow
+    if (currentBufferSize < 0) {
+      return(-1);
+    }
     # buffer in arriving packets.
-    currentBufferSize = currentBufferSize + length(overt_packet_times[(overt_packet_times > time) & (overt_packet_times <= (time+delay))]);
+    currentBufferSize = currentBufferSize + length(overt_packet_times[(overt_packet_times >= time) & (overt_packet_times < (time+delay))]);
     
     # update time
     time = time + delay;
@@ -340,18 +335,6 @@ unifSimulation <- function(maxBufferSize, currentBufferSize, messageSize) {
     # check for overflow.
     if (currentBufferSize > maxBufferSize) {
       return(1);
-    }
-    
-    # check for underflow (underflow only occurs if buffer is empty)
-    if (currentBufferSize == 0) {
-      timeRemainingTillUnderflow = if(bit == 1) 1-delay else median-delay;
-      
-      arrivingPackets = length(overt_packet_times[(overt_packet_times > time) & (overt_packet_times <= (time+timeRemainingTillUnderflow))]);
-      
-      # no packets arrived during this time.
-      if (arrivingPackets == 0) {
-        return(-1);
-      }
     }
   }
   
@@ -413,7 +396,9 @@ Propose methods to deal with buffer overflow and underflow.
 ## Answer {-}
 Keeping the size of the message smaller generally keeps the percentage of overflow or underflow lower than messages with more bits. In both the Uniform and Exponential generation of inter-packet delays, the percentage of underflows and overflows are lower with each $i$. Additionally, $i = 10$ had the smallest chance of overflow and underflow for both Uniform and Exponential methods of generating inter-packet delays and for both message sizes. So keeping the message size smaller and the initial buffer size half the max buffer size ($i = 10 = 20 * 0.5$), then the percentage of underflows and overflows will drastically decrease.
 
-A method to decrease underflows is to scale up the time remaining until underflow happens so a greater time window can catch more incoming packets. To decrease the chance of overflows, the generated delays between packets could be scaled down so less packets are added to the buffer between a given time and a delay.
+To decrease the chance of overflows, the generated delays between packets could be scaled down so less packets are added to the buffer between a given time and a delay.
+
+To decrease underflows we can let the sender be flexible with the delay they generated. For example, lets say we are sending packets using the uniform distribution with only one packet in the buffer, t = 0. If we send a 0 with delay = 0.25, and no packets arrive between [0,0.25] then we would normally consider it as underflow once we wait delay time, but the sender has a brief window of 0.25 seconds (0.5-delay). The sender could try and wait to see if packets arrive during this brief window, if any arrive we could send those and prevent underflow. We can't wait any longer than this period of time or else the 0 will be interpretted as a 1 to the receiver if delay becomes > 0.5.
 
 Lastly, the buffer size itself could be scaled bigger or smaller in accordance with the delay scaling mentioned previously to prevent underflows and overflows.
 
